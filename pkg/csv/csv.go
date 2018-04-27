@@ -1,10 +1,12 @@
-package main
+package csv
 
 import (
 	"encoding/csv"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/models"
 )
 
 type CSV struct {
@@ -17,8 +19,8 @@ func NewCSV(filename string) CSV {
 	}
 }
 
-func (c CSV) Parse() (Transactions, error) {
-	var transactions Transactions
+func (c CSV) Parse() (models.Transactions, error) {
+	var transactions models.Transactions
 	var err error
 
 	// Open CSV file
@@ -55,7 +57,7 @@ func (c CSV) Parse() (Transactions, error) {
 		}
 
 		// Merge transaction
-		transactions = append(transactions, Transaction{
+		transactions = append(transactions, models.Transaction{
 			Date:    date,
 			Credits: credit,
 		})

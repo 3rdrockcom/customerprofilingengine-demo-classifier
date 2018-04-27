@@ -1,4 +1,4 @@
-package main
+package classifier
 
 import (
 	"errors"
@@ -7,15 +7,19 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/models"
+	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/ranks"
+
 	"github.com/jinzhu/now"
 )
 
 type Classifier struct {
-	Transactions Transactions
-	Ranks        Ranks
+	Transactions models.Transactions
+	Ranks        ranks.Ranks
+	Debug        bool
 }
 
-func NewClassifier(t Transactions) (*Classifier, error) {
+func NewClassifier(t models.Transactions) (*Classifier, error) {
 	if len(t) == 0 {
 		return nil, errors.New("transactions required")
 	}
@@ -29,7 +33,7 @@ func NewClassifier(t Transactions) (*Classifier, error) {
 }
 
 func (c *Classifier) Process() {
-	var rank Rank
+	var rank ranks.Rank
 
 	rank = c.doMonthly()
 	c.Ranks = append(c.Ranks, rank)
@@ -43,12 +47,12 @@ func (c *Classifier) Process() {
 	sort.Sort(sort.Reverse(c.Ranks))
 }
 
-func (c *Classifier) GetClassification() Rank {
+func (c *Classifier) GetClassification() ranks.Rank {
 	classification := c.Ranks[0]
 	return classification
 }
 
-func (c *Classifier) doMonthly() Rank {
+func (c *Classifier) doMonthly() ranks.Rank {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
@@ -68,9 +72,9 @@ func (c *Classifier) doMonthly() Rank {
 			}
 		}
 	}
-	rank := NewRank("Monthly", c.getScore(list))
+	rank := ranks.NewRank("Monthly", c.getScore(list))
 
-	if Debug {
+	if c.Debug {
 		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
 		fmt.Println(list)
 	}
@@ -78,7 +82,7 @@ func (c *Classifier) doMonthly() Rank {
 	return rank
 }
 
-func (c *Classifier) doBiWeekly() Rank {
+func (c *Classifier) doBiWeekly() ranks.Rank {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
@@ -99,9 +103,9 @@ func (c *Classifier) doBiWeekly() Rank {
 		}
 	}
 
-	rank := NewRank("BiWeekly", c.getScore(list))
+	rank := ranks.NewRank("BiWeekly", c.getScore(list))
 
-	if Debug {
+	if c.Debug {
 		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
 		fmt.Println(list)
 	}
@@ -109,7 +113,7 @@ func (c *Classifier) doBiWeekly() Rank {
 	return rank
 }
 
-func (c *Classifier) doWeekly() Rank {
+func (c *Classifier) doWeekly() ranks.Rank {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
@@ -130,9 +134,9 @@ func (c *Classifier) doWeekly() Rank {
 		}
 	}
 
-	rank := NewRank("Weekly", c.getScore(list))
+	rank := ranks.NewRank("Weekly", c.getScore(list))
 
-	if Debug {
+	if c.Debug {
 		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
 		fmt.Println(list)
 	}

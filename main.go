@@ -3,6 +3,9 @@ package main
 import (
 	"flag"
 	"fmt"
+
+	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/classifier"
+	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/csv"
 )
 
 var Filename string
@@ -17,19 +20,20 @@ func init() {
 
 func main() {
 	// Parse CSV file and extract transactions
-	csvFile := NewCSV(Filename)
+	csvFile := csv.NewCSV(Filename)
 	transactions, err := csvFile.Parse()
 	if err != nil {
 		panic(err)
 	}
 
 	// Classify account
-	classifier, err := NewClassifier(transactions)
+	cl, err := classifier.NewClassifier(transactions)
 	if err != nil {
 		panic(err)
 	}
-	classifier.Process()
-	classification := classifier.GetClassification()
+	cl.Debug = Debug
+	cl.Process()
+	classification := cl.GetClassification()
 
 	fmt.Println("Classification: " + fmt.Sprintf("%s [%.2f]", classification.Name, classification.Value*100.0))
 }
