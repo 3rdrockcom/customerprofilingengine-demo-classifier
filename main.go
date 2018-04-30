@@ -6,6 +6,7 @@ import (
 
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/classifier"
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/csv"
+	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/probability"
 )
 
 var Filename string
@@ -26,6 +27,16 @@ func main() {
 		panic(err)
 	}
 
+	// Probability
+	p := probability.New(transactions)
+	p.Debug = Debug
+
+	p.RunDay().Display()
+	fmt.Println()
+
+	p.RunWeekday().Display()
+	fmt.Println()
+
 	// Classify account
 	cl, err := classifier.NewClassifier(transactions)
 	if err != nil {
@@ -35,5 +46,5 @@ func main() {
 	cl.Process()
 	classification := cl.GetClassification()
 
-	fmt.Println("Classification: " + fmt.Sprintf("%s [%.6f]", classification.Name, classification.Value))
+	fmt.Println(fmt.Sprintf("Classification: %s [%.6f]", classification.Name, classification.Value))
 }
