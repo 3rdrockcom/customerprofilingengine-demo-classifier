@@ -35,5 +35,5 @@ func main() {
 	cl.Process()
 	classification := cl.GetClassification()
 
-	fmt.Println("Classification: " + fmt.Sprintf("%s [%.2f]", classification.Name, classification.Value*100.0))
+	fmt.Println("Classification: " + fmt.Sprintf("%s [%.6f]", classification.Name, classification.Value))
 }

@@ -11,6 +11,7 @@ import (
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/ranks"
 
 	"github.com/jinzhu/now"
+	"github.com/montanaflynn/stats"
 )
 
 type Classifier struct {
@@ -36,13 +37,18 @@ func (c *Classifier) Process() {
 	var rank ranks.Rank
 
 	rank = c.doMonthly()
+	rank.Weight = 10
 	c.Ranks = append(c.Ranks, rank)
 
 	rank = c.doBiWeekly()
+	rank.Weight = 20
 	c.Ranks = append(c.Ranks, rank)
 
 	rank = c.doWeekly()
+	rank.Weight = 30
 	c.Ranks = append(c.Ranks, rank)
+
+	// c.Ranks = append(c.Ranks, ranks.NewRank("Unknown", .001))
 
 	sort.Sort(sort.Reverse(c.Ranks))
 }
@@ -59,24 +65,26 @@ func (c *Classifier) doMonthly() ranks.Rank {
 	dateRangeMin := now.New(dateMin).BeginningOfMonth()
 	dateRangeMax := now.New(dateMax).EndOfMonth()
 
-	list := make(map[int]int)
+	list := make(Credits)
 
 	//
 	for d := dateRangeMin; d.Before(dateRangeMax); d = d.AddDate(0, 1, 0) {
 		k, _ := strconv.Atoi(d.Format("20060102"))
-		list[k] = 0
+		list[k] = []Credit{}
 
 		for i := 0; i < len(t); i++ {
 			if (t[i].Date.After(d) || t[i].Date.Equal(d)) && t[i].Date.Before(d.AddDate(0, 1, 0)) {
-				list[k]++
+				list[k] = append(list[k], Credit{
+					Amount: c.Transactions[i].Credits,
+					Date:   c.Transactions[i].Date,
+				})
 			}
 		}
 	}
-	rank := ranks.NewRank("Monthly", c.getScore(list), 10)
+	rank := ranks.NewRank("Monthly", c.calcRankValue(list), 10)
 
 	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
-		fmt.Println(list)
+		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
 	}
 
 	return rank
@@ -89,25 +97,27 @@ func (c *Classifier) doBiWeekly() ranks.Rank {
 	dateRangeMin := now.New(dateMin).BeginningOfWeek()
 	dateRangeMax := now.New(dateMax).EndOfWeek()
 
-	list := make(map[int]int)
+	list := make(Credits)
 
 	//
 	for d := dateRangeMin; d.Before(dateRangeMax); d = d.AddDate(0, 0, 14) {
 		k, _ := strconv.Atoi(d.Format("20060102"))
-		list[k] = 0
+		list[k] = []Credit{}
 
 		for i := 0; i < len(t); i++ {
 			if (t[i].Date.After(d) || t[i].Date.Equal(d)) && t[i].Date.Before(d.AddDate(0, 0, 14)) {
-				list[k]++
+				list[k] = append(list[k], Credit{
+					Amount: c.Transactions[i].Credits,
+					Date:   c.Transactions[i].Date,
+				})
 			}
 		}
 	}
 
-	rank := ranks.NewRank("BiWeekly", c.getScore(list), 20)
+	rank := ranks.NewRank("BiWeekly", c.calcRankValue(list), 20)
 
 	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
-		fmt.Println(list)
+		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
 	}
 
 	return rank
@@ -120,42 +130,56 @@ func (c *Classifier) doWeekly() ranks.Rank {
 	dateRangeMin := now.New(dateMin).BeginningOfWeek()
 	dateRangeMax := now.New(dateMax).EndOfWeek()
 
-	list := make(map[int]int)
+	list := make(Credits)
 
 	//
 	for d := dateRangeMin; d.Before(dateRangeMax); d = d.AddDate(0, 0, 7) {
 		k, _ := strconv.Atoi(d.Format("20060102"))
-		list[k] = 0
+		list[k] = []Credit{}
 
 		for i := 0; i < len(c.Transactions); i++ {
 			if (t[i].Date.After(d) || t[i].Date.Equal(d)) && t[i].Date.Before(d.AddDate(0, 0, 7)) {
-				list[k]++
+				list[k] = append(list[k], Credit{
+					Amount: c.Transactions[i].Credits,
+					Date:   c.Transactions[i].Date,
+				})
 			}
 		}
 	}
 
-	rank := ranks.NewRank("Weekly", c.getScore(list), 30)
+	rank := ranks.NewRank("Weekly", c.calcRankValue(list), 30)
 
 	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
-		fmt.Println(list)
+		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
 	}
 
 	return rank
 }
 
-func (c *Classifier) getScore(list map[int]int) float64 {
-	l := 0.0
+func (c *Classifier) calcRankValue(list Credits) float64 {
+	data := []float64{}
+
+	total := 0.0
 	for i := range list {
-		if list[i] > 0 {
-			l++
+		sum := 0.0
+
+		for j := range list[i] {
+			total += list[i][j].Amount
+			sum += list[i][j].Amount
 		}
-		if list[i] > 1 {
-			l -= .5
-		}
+
+		data = append(data, sum)
 	}
 
-	return float64(l) / float64(len(list))
+	mean, _ := stats.Mean(data)
+	sd, _ := stats.StandardDeviation(data)
+
+	if c.Debug {
+		fmt.Println(fmt.Sprintf("Statistics: %.2f ± %.2f", mean, sd))
+	}
+
+	rankValue := 1 / sd
+	return rankValue
 }
 
 func (c *Classifier) getDateRange() (time.Time, time.Time) {
