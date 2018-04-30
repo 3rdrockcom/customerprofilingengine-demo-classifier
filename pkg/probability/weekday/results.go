@@ -3,7 +3,10 @@ package weekday
 import (
 	"fmt"
 	"sort"
+	"strings"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 type Results []Result
@@ -22,7 +25,10 @@ type Result struct {
 func (r Results) Display() {
 	sort.Sort(sort.Reverse(r))
 
-	fmt.Println("Probability: Weekday\n---")
+	o := color.New(color.Bold)
+	o.Println(strings.ToUpper("Probability - Weekday"))
+	fmt.Println("---")
+
 	for i := range r {
 		if r[i].Probability == 0 {
 			break

@@ -3,10 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/classifier"
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/csv"
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/probability"
+
+	"github.com/fatih/color"
 )
 
 var Filename string
@@ -46,5 +49,6 @@ func main() {
 	cl.Process()
 	classification := cl.GetClassification()
 
-	fmt.Println(fmt.Sprintf("Classification: %s [%.6f]", classification.Name, classification.Value))
+	o := color.New(color.Bold)
+	o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]", classification.Name, classification.Value)))
 }
