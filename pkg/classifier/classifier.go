@@ -72,7 +72,7 @@ func (c *Classifier) doMonthly() ranks.Rank {
 			}
 		}
 	}
-	rank := ranks.NewRank("Monthly", c.getScore(list))
+	rank := ranks.NewRank("Monthly", c.getScore(list), 10)
 
 	if c.Debug {
 		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
@@ -103,7 +103,7 @@ func (c *Classifier) doBiWeekly() ranks.Rank {
 		}
 	}
 
-	rank := ranks.NewRank("BiWeekly", c.getScore(list))
+	rank := ranks.NewRank("BiWeekly", c.getScore(list), 20)
 
 	if c.Debug {
 		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
@@ -134,7 +134,7 @@ func (c *Classifier) doWeekly() ranks.Rank {
 		}
 	}
 
-	rank := ranks.NewRank("Weekly", c.getScore(list))
+	rank := ranks.NewRank("Weekly", c.getScore(list), 30)
 
 	if c.Debug {
 		fmt.Println(fmt.Sprintf("Class: %s [%.2f]", rank.Name, rank.Value*100.0))
