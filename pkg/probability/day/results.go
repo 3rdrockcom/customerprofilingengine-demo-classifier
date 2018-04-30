@@ -11,7 +11,7 @@ import (
 type Results []Result
 
 func (r Results) Len() int           { return len(r) }
-func (r Results) Less(i, j int) bool { return r[i].Probability < r[j].Probability }
+func (r Results) Less(i, j int) bool { return r[i].Probability > r[j].Probability }
 func (r Results) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
 
 type Result struct {
@@ -22,7 +22,7 @@ type Result struct {
 }
 
 func (r Results) Display() {
-	sort.Sort(sort.Reverse(r))
+	sort.Sort(r)
 
 	o := color.New(color.Bold)
 	o.Println(strings.ToUpper("Probability - Day"))
