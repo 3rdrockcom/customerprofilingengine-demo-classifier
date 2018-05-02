@@ -16,7 +16,6 @@ import (
 
 type Classifier struct {
 	Transactions models.Transactions
-	Ranks        ranks.Ranks
 	Debug        bool
 }
 
@@ -33,30 +32,56 @@ func NewClassifier(t models.Transactions) (*Classifier, error) {
 	return c, nil
 }
 
-func (c *Classifier) Process() {
+func (c *Classifier) Process() Results {
+	var listRank ranks.Ranks
 	var rank ranks.Rank
+	var list = make(map[string]Credits)
+	var name string
 
-	rank = c.doMonthly()
-	rank.Weight = 10
-	c.Ranks = append(c.Ranks, rank)
+	name = "monthly"
+	list[name] = c.processMonthly()
+	rank = ranks.NewRank(name, c.calcRankValue(list[name]), 10)
+	if c.Debug {
+		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
+	}
+	listRank = append(listRank, rank)
 
-	rank = c.doBiWeekly()
-	rank.Weight = 20
-	c.Ranks = append(c.Ranks, rank)
+	name = "biweekly"
+	list[name] = c.processBiWeekly()
+	rank = ranks.NewRank(name, c.calcRankValue(list[name]), 20)
+	if c.Debug {
+		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
+	}
+	listRank = append(listRank, rank)
 
-	rank = c.doWeekly()
-	rank.Weight = 30
-	c.Ranks = append(c.Ranks, rank)
+	name = "weekly"
+	list[name] = c.processWeekly()
+	rank = ranks.NewRank(name, c.calcRankValue(list[name]), 30)
+	if c.Debug {
+		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
+	}
+	listRank = append(listRank, rank)
 
-	sort.Sort(sort.Reverse(c.Ranks))
+	sort.Sort(sort.Reverse(listRank))
+
+	res := Results{}
+	for i := range listRank {
+		entry := Result{
+			Name:  listRank[i].Name,
+			Score: listRank[i].Value,
+			List:  list[listRank[i].Name],
+		}
+		res = append(res, entry)
+
+		if c.Debug {
+			fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", entry.Name, entry.Score))
+		}
+	}
+
+	return res
 }
 
-func (c *Classifier) GetClassification() ranks.Rank {
-	classification := c.Ranks[0]
-	return classification
-}
-
-func (c *Classifier) doMonthly() ranks.Rank {
+func (c *Classifier) processMonthly() Credits {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
@@ -79,16 +104,11 @@ func (c *Classifier) doMonthly() ranks.Rank {
 			}
 		}
 	}
-	rank := ranks.NewRank("Monthly", c.calcRankValue(list), 10)
 
-	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
-	}
-
-	return rank
+	return list
 }
 
-func (c *Classifier) doBiWeekly() ranks.Rank {
+func (c *Classifier) processBiWeekly() Credits {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
@@ -112,16 +132,10 @@ func (c *Classifier) doBiWeekly() ranks.Rank {
 		}
 	}
 
-	rank := ranks.NewRank("BiWeekly", c.calcRankValue(list), 20)
-
-	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
-	}
-
-	return rank
+	return list
 }
 
-func (c *Classifier) doWeekly() ranks.Rank {
+func (c *Classifier) processWeekly() Credits {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
@@ -145,13 +159,7 @@ func (c *Classifier) doWeekly() ranks.Rank {
 		}
 	}
 
-	rank := ranks.NewRank("Weekly", c.calcRankValue(list), 30)
-
-	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
-	}
-
-	return rank
+	return list
 }
 
 func (c *Classifier) calcRankValue(list Credits) float64 {
@@ -179,9 +187,8 @@ func (c *Classifier) calcRankValue(list Credits) float64 {
 
 	rankValue = rankValue / float64(len(list))
 
-	mean, sd, _ := c.getStatistics(data)
-
 	if c.Debug {
+		mean, sd, _ := c.getStatistics(data)
 		fmt.Println(fmt.Sprintf("Statistics: %.2f ± %.2f", mean, sd))
 	}
 

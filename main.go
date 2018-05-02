@@ -53,12 +53,8 @@ func main() {
 		// Probability
 		p := probability.New(transactions)
 		p.Debug = Debug
-
-		p.RunDay().Display()
-		fmt.Println()
-
-		p.RunWeekday().Display()
-		fmt.Println()
+		probDay := p.RunDay()
+		probWeekday := p.RunWeekday()
 
 		// Classify account
 		cl, err := classifier.NewClassifier(transactions)
@@ -66,10 +62,19 @@ func main() {
 			panic(err)
 		}
 		cl.Debug = Debug
-		cl.Process()
-		classification := cl.GetClassification()
+		res := cl.Process()
 
-		o = color.New(color.Bold)
-		o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]", classification.Name, classification.Value)))
+		c := res.GetClassification()
+		avg := res.GetAverage()
+
+		o = color.New(color.Bold).Add(color.BgBlue).Add(color.FgWhite)
+		o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]\nAverage: %.2f\n", c.Name, c.Score, avg)))
+
+		probDay.Display()
+
+		if c.Name == "weekly" {
+			probWeekday.Display()
+			fmt.Println()
+		}
 	}
 }
