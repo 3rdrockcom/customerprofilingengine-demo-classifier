@@ -25,30 +25,51 @@ func init() {
 func main() {
 	// Parse CSV file and extract transactions
 	csvFile := csv.NewCSV(Filename)
-	transactions, err := csvFile.Parse()
+	t, err := csvFile.Parse()
 	if err != nil {
 		panic(err)
 	}
 
-	// Probability
-	p := probability.New(transactions)
-	p.Debug = Debug
+	tSplit := t.Separator(.5)
 
-	p.RunDay().Display()
-	fmt.Println()
+	for i := 0; i < len(tSplit); i++ {
+		transactions := tSplit[i]
 
-	p.RunWeekday().Display()
-	fmt.Println()
+		if len(transactions) == 0 {
+			break
+		}
 
-	// Classify account
-	cl, err := classifier.NewClassifier(transactions)
-	if err != nil {
-		panic(err)
+		o := color.New(color.Bold).Add(color.FgGreen)
+		switch i {
+		case 0:
+			o.Println(strings.ToUpper("--- Results [Primary] ---"))
+			fmt.Println()
+		case 1:
+			fmt.Println()
+			o.Println(strings.ToUpper("--- Results [Secondary] ---"))
+			fmt.Println()
+		}
+
+		// Probability
+		p := probability.New(transactions)
+		p.Debug = Debug
+
+		p.RunDay().Display()
+		fmt.Println()
+
+		p.RunWeekday().Display()
+		fmt.Println()
+
+		// Classify account
+		cl, err := classifier.NewClassifier(transactions)
+		if err != nil {
+			panic(err)
+		}
+		cl.Debug = Debug
+		cl.Process()
+		classification := cl.GetClassification()
+
+		o = color.New(color.Bold)
+		o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]", classification.Name, classification.Value)))
 	}
-	cl.Debug = Debug
-	cl.Process()
-	classification := cl.GetClassification()
-
-	o := color.New(color.Bold)
-	o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]", classification.Name, classification.Value)))
 }
