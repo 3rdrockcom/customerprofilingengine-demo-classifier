@@ -157,6 +157,7 @@ func (c *Classifier) doWeekly() ranks.Rank {
 func (c *Classifier) calcRankValue(list Credits) float64 {
 	data := []float64{}
 
+	rankValue := 0.0
 	total := 0.0
 	for i := range list {
 		sum := 0.0
@@ -167,16 +168,23 @@ func (c *Classifier) calcRankValue(list Credits) float64 {
 		}
 
 		data = append(data, sum)
+
+		if len(list[i]) > 0 {
+			rankValue++
+		}
+		if len(list[i]) > 1 {
+			rankValue -= .5
+		}
 	}
 
-	mean, _ := stats.Mean(data)
-	sd, _ := stats.StandardDeviation(data)
+	rankValue = rankValue / float64(len(list))
+
+	mean, sd, _ := c.getStatistics(data)
 
 	if c.Debug {
 		fmt.Println(fmt.Sprintf("Statistics: %.2f ± %.2f", mean, sd))
 	}
 
-	rankValue := mean / sd
 	return rankValue
 }
 
@@ -185,4 +193,20 @@ func (c *Classifier) getDateRange() (time.Time, time.Time) {
 	dateMax := c.Transactions[len(c.Transactions)-1].Date
 
 	return dateMin, dateMax
+}
+
+func (c *Classifier) getStatistics(data []float64) (float64, float64, error) {
+	var err error
+
+	mean, err := stats.Mean(data)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	sd, err := stats.StandardDeviation(data)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	return mean, sd, nil
 }
