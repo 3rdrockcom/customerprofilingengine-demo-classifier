@@ -48,8 +48,6 @@ func (c *Classifier) Process() {
 	rank.Weight = 30
 	c.Ranks = append(c.Ranks, rank)
 
-	// c.Ranks = append(c.Ranks, ranks.NewRank("Unknown", .001))
-
 	sort.Sort(sort.Reverse(c.Ranks))
 }
 
@@ -178,7 +176,7 @@ func (c *Classifier) calcRankValue(list Credits) float64 {
 		fmt.Println(fmt.Sprintf("Statistics: %.2f ± %.2f", mean, sd))
 	}
 
-	rankValue := 1 / sd
+	rankValue := mean / sd
 	return rankValue
 }
 
