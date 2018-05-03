@@ -19,7 +19,7 @@ func (r Results) GetClassification() Result {
 	return classification
 }
 
-func (r Results) GetAverage() float64 {
+func (r Results) GetAveragePerInterval() float64 {
 	data := []float64{}
 
 	classification := r[0]
@@ -40,6 +40,22 @@ func (r Results) GetAverage() float64 {
 		}
 
 		data = append(data, sum)
+	}
+
+	mean, _ := stats.Mean(data)
+	return mean
+}
+
+func (r Results) GetAverage() float64 {
+	data := []float64{}
+
+	classification := r[0]
+	list := classification.List
+
+	for i := range list {
+		for j := range list[i] {
+			data = append(data, list[i][j].Amount)
+		}
 	}
 
 	mean, _ := stats.Mean(data)

@@ -69,10 +69,14 @@ func main() {
 		res := cl.Process()
 
 		c := res.GetClassification()
+		avgPerInterval := res.GetAveragePerInterval()
 		avg := res.GetAverage()
 
 		o = color.New(color.Bold).Add(color.BgBlue).Add(color.FgWhite)
-		o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]\nAverage: %.2f\n", c.Name, c.Score, avg)))
+		o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]", c.Name, c.Score)))
+		o.Println(strings.ToUpper(fmt.Sprintf("Average Credits Per %s Interval: %.2f", c.Name, avgPerInterval)))
+		o.Println(strings.ToUpper(fmt.Sprintf("Average Credits: %.2f", avg)))
+		fmt.Println()
 
 		probDay.Display()
 
