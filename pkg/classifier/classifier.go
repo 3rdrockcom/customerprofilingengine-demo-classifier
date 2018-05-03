@@ -162,13 +162,21 @@ func (c *Classifier) processWeekly() Credits {
 func (c *Classifier) calcRankValue(list Credits) float64 {
 	data := []float64{}
 
+	var keys []int
+	for k := range list {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
 	if Debug {
 		fmt.Println("Date Range(s):")
 	}
 
 	rankValue := 0.0
 	total := 0.0
-	for i := range list {
+	for k := range keys {
+		i := keys[k]
+
 		sum := 0.0
 		for j := range list[i] {
 			total += list[i][j].Amount
@@ -187,7 +195,7 @@ func (c *Classifier) calcRankValue(list Credits) float64 {
 		rankValue += v
 
 		if Debug {
-			fmt.Println(fmt.Sprintf("%v: %10v %5v [%v / %v]", i, sum, v, rankValue, i+1))
+			fmt.Println(fmt.Sprintf("%v: %10v %5v [%v / %v]", i, sum, v, rankValue, k+1))
 		}
 	}
 

@@ -1,6 +1,10 @@
 package classifier
 
-import "github.com/montanaflynn/stats"
+import (
+	"sort"
+
+	"github.com/montanaflynn/stats"
+)
 
 type Results []Result
 
@@ -21,7 +25,14 @@ func (r Results) GetAverage() float64 {
 	classification := r[0]
 	list := classification.List
 
-	for i := range list {
+	var keys []int
+	for k := range list {
+		keys = append(keys, k)
+	}
+	sort.Ints(keys)
+
+	for k := range keys {
+		i := keys[k]
 		sum := 0.0
 
 		for j := range list[i] {
