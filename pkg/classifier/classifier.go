@@ -38,7 +38,7 @@ func (c *Classifier) Process() Results {
 	var rank ranks.Rank
 	var list = make(map[string]Credits)
 
-	buckets := []string{"monthly", "biweekly", "weekly"}
+	buckets := []string{"monthly", "bimonthly", "weekly"}
 	for i := range buckets {
 		name := buckets[i]
 		if Debug {
@@ -49,8 +49,8 @@ func (c *Classifier) Process() Results {
 		case "monthly":
 			list[name] = c.processMonthly()
 			rank = ranks.NewRank(name, c.calcRankValue(list[name]), 10)
-		case "biweekly":
-			list[name] = c.processBiWeekly()
+		case "bimonthly":
+			list[name] = c.processBiMonthly()
 			rank = ranks.NewRank(name, c.calcRankValue(list[name]), 20)
 		case "weekly":
 			list[name] = c.processWeekly()
@@ -105,22 +105,33 @@ func (c *Classifier) processMonthly() Credits {
 	return list
 }
 
-func (c *Classifier) processBiWeekly() Credits {
+func (c *Classifier) processBiMonthly() Credits {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
-	dateRangeMin := now.New(dateMin).BeginningOfWeek()
-	dateRangeMax := now.New(dateMax).EndOfWeek()
+	dateRangeMin := now.New(dateMin).BeginningOfMonth()
+	dateRangeMax := now.New(dateMax).EndOfMonth()
 
 	list := make(Credits)
 
+	addDate := func(d time.Time) time.Time {
+		if d.Day() == 1 {
+			return d.AddDate(0, 0, 15)
+		}
+		if d.Day() == 16 {
+			return now.New(d.AddDate(0, 1, 0)).BeginningOfMonth()
+		}
+
+		return d
+	}
+
 	//
-	for d := dateRangeMin; d.Before(dateRangeMax); d = d.AddDate(0, 0, 14) {
+	for d := dateRangeMin; d.Before(dateRangeMax); d = addDate(d) {
 		k, _ := strconv.Atoi(d.Format("20060102"))
 		list[k] = []Credit{}
 
 		for i := 0; i < len(t); i++ {
-			if (t[i].Date.After(d) || t[i].Date.Equal(d)) && t[i].Date.Before(d.AddDate(0, 0, 14)) {
+			if (t[i].Date.After(d) || t[i].Date.Equal(d)) && t[i].Date.Before(addDate(d)) {
 				list[k] = append(list[k], Credit{
 					Amount: c.Transactions[i].Credits,
 					Date:   c.Transactions[i].Date,
