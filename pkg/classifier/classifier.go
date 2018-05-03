@@ -181,7 +181,7 @@ func (c *Classifier) calcRankValue(list Credits) float64 {
 			rankValue++
 		}
 		if len(list[i]) > 1 {
-			rankValue -= 1 / float64(len(list[i]))
+			rankValue -= float64(len(list[i])) - 1
 		}
 	}
 
