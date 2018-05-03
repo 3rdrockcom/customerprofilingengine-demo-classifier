@@ -9,20 +9,48 @@ import (
 type Results []Result
 
 type Result struct {
-	Name  string
-	Score float64
-	List  Credits
+	Name        string
+	Score       float64
+	Probability float64
+	List        Credits
 }
 
-func (r Results) GetClassification() Result {
-	classification := r[0]
+func (r Results) GetClassification(e int) Result {
+	classification := r[e]
 	return classification
 }
 
-func (r Results) GetAveragePerInterval() float64 {
+func (r Results) GetProbability(e int) float64 {
+	data := make([]float64, len(r))
+
+	minScore := 0.0
+	for i := range r {
+		score := r[i].Score
+
+		if score < minScore {
+			minScore = score
+		}
+
+		data[i] = score
+	}
+
+	sum := 0.0
+	for i := range data {
+		data[i] = data[i] - minScore
+		sum += data[i]
+	}
+
+	for i := range data {
+		data[i] = (data[i] / sum)
+	}
+
+	return data[e]
+}
+
+func (r Results) GetAveragePerInterval(e int) float64 {
 	data := []float64{}
 
-	classification := r[0]
+	classification := r[e]
 	list := classification.List
 
 	var keys []int
@@ -46,10 +74,10 @@ func (r Results) GetAveragePerInterval() float64 {
 	return mean
 }
 
-func (r Results) GetAverage() float64 {
+func (r Results) GetAverage(e int) float64 {
 	data := []float64{}
 
-	classification := r[0]
+	classification := r[e]
 	list := classification.List
 
 	for i := range list {

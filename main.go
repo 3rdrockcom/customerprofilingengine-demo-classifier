@@ -68,21 +68,28 @@ func main() {
 		}
 		res := cl.Process()
 
-		c := res.GetClassification()
-		avgPerInterval := res.GetAveragePerInterval()
-		avg := res.GetAverage()
-
 		o = color.New(color.Bold).Add(color.BgBlue).Add(color.FgWhite)
-		o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.6f]", c.Name, c.Score)))
-		o.Println(strings.ToUpper(fmt.Sprintf("Average Credits Per %s Interval: %.2f", c.Name, avgPerInterval)))
-		o.Println(strings.ToUpper(fmt.Sprintf("Average Credits: %.2f", avg)))
-		fmt.Println()
 
-		probDay.Display()
+		for i := range res {
+			cp := res.GetProbability(i)
 
-		if c.Name == "weekly" {
+			o.Println(strings.ToUpper(fmt.Sprintf("Classification: %s [%.2f %%]", res[i].Name, cp*100)))
+
+			avgPerInterval := res.GetAveragePerInterval(i)
+			avg := res.GetAverage(i)
+
+			fmt.Println(strings.ToUpper(fmt.Sprintf("Average Credits Per %s Interval: %.2f", res[i].Name, avgPerInterval)))
+			fmt.Println(strings.ToUpper(fmt.Sprintf("Average Credits: %.2f", avg)))
 			fmt.Println()
-			probWeekday.Display()
+
+			probDay.Display()
+
+			if res[i].Name == "weekly" {
+				fmt.Println()
+				probWeekday.Display()
+			}
+
+			fmt.Println()
 			fmt.Println()
 		}
 	}
