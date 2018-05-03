@@ -73,6 +73,7 @@ func main() {
 		probDay.Display()
 
 		if c.Name == "weekly" {
+			fmt.Println()
 			probWeekday.Display()
 			fmt.Println()
 		}
