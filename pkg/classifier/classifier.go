@@ -109,29 +109,18 @@ func (c *Classifier) processBiMonthly() Credits {
 	t := c.Transactions
 
 	dateMin, dateMax := c.getDateRange()
-	dateRangeMin := now.New(dateMin).BeginningOfMonth()
-	dateRangeMax := now.New(dateMax).EndOfMonth()
+	dateRangeMin := now.New(dateMin).BeginningOfWeek()
+	dateRangeMax := now.New(dateMax).EndOfWeek()
 
 	list := make(Credits)
 
-	addDate := func(d time.Time) time.Time {
-		if d.Day() == 1 {
-			return d.AddDate(0, 0, 15)
-		}
-		if d.Day() == 16 {
-			return now.New(d.AddDate(0, 1, 0)).BeginningOfMonth()
-		}
-
-		return d
-	}
-
 	//
-	for d := dateRangeMin; d.Before(dateRangeMax); d = addDate(d) {
+	for d := dateRangeMin; d.Before(dateRangeMax); d = d.AddDate(0, 0, 15) {
 		k, _ := strconv.Atoi(d.Format("20060102"))
 		list[k] = []Credit{}
 
 		for i := 0; i < len(t); i++ {
-			if (t[i].Date.After(d) || t[i].Date.Equal(d)) && t[i].Date.Before(addDate(d)) {
+			if (t[i].Date.After(d) || t[i].Date.Equal(d)) && t[i].Date.Before(d.AddDate(0, 0, 15)) {
 				list[k] = append(list[k], Credit{
 					Amount: c.Transactions[i].Credits,
 					Date:   c.Transactions[i].Date,
