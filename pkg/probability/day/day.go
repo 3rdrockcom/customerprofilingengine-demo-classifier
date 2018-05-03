@@ -4,9 +4,10 @@ import (
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/models"
 )
 
+var Debug bool
+
 type Day struct {
-	t     models.Transactions
-	Debug bool
+	t models.Transactions
 }
 
 func NewDay(t models.Transactions) *Day {

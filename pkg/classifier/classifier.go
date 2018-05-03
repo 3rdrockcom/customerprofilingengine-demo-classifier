@@ -14,9 +14,10 @@ import (
 	"github.com/montanaflynn/stats"
 )
 
+var Debug bool
+
 type Classifier struct {
 	Transactions models.Transactions
-	Debug        bool
 }
 
 func NewClassifier(t models.Transactions) (*Classifier, error) {
@@ -36,31 +37,31 @@ func (c *Classifier) Process() Results {
 	var listRank ranks.Ranks
 	var rank ranks.Rank
 	var list = make(map[string]Credits)
-	var name string
 
-	name = "monthly"
-	list[name] = c.processMonthly()
-	rank = ranks.NewRank(name, c.calcRankValue(list[name]), 10)
-	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
-	}
-	listRank = append(listRank, rank)
+	buckets := []string{"monthly", "biweekly", "weekly"}
+	for i := range buckets {
+		name := buckets[i]
+		if Debug {
+			fmt.Println(fmt.Sprintf("::: Class: %s :::\n", name))
+		}
 
-	name = "biweekly"
-	list[name] = c.processBiWeekly()
-	rank = ranks.NewRank(name, c.calcRankValue(list[name]), 20)
-	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
-	}
-	listRank = append(listRank, rank)
+		switch name {
+		case "monthly":
+			list[name] = c.processMonthly()
+			rank = ranks.NewRank(name, c.calcRankValue(list[name]), 10)
+		case "biweekly":
+			list[name] = c.processBiWeekly()
+			rank = ranks.NewRank(name, c.calcRankValue(list[name]), 20)
+		case "weekly":
+			list[name] = c.processWeekly()
+			rank = ranks.NewRank(name, c.calcRankValue(list[name]), 30)
+		}
 
-	name = "weekly"
-	list[name] = c.processWeekly()
-	rank = ranks.NewRank(name, c.calcRankValue(list[name]), 30)
-	if c.Debug {
-		fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", rank.Name, rank.Value))
+		if Debug {
+			fmt.Println(fmt.Sprintf("Score: %.6f\n", rank.Value))
+		}
+		listRank = append(listRank, rank)
 	}
-	listRank = append(listRank, rank)
 
 	sort.Sort(sort.Reverse(listRank))
 
@@ -72,10 +73,6 @@ func (c *Classifier) Process() Results {
 			List:  list[listRank[i].Name],
 		}
 		res = append(res, entry)
-
-		if c.Debug {
-			fmt.Println(fmt.Sprintf("Class: %s [%.6f]\n", entry.Name, entry.Score))
-		}
 	}
 
 	return res
@@ -165,11 +162,14 @@ func (c *Classifier) processWeekly() Credits {
 func (c *Classifier) calcRankValue(list Credits) float64 {
 	data := []float64{}
 
+	if Debug {
+		fmt.Println("Date Range(s):")
+	}
+
 	rankValue := 0.0
 	total := 0.0
 	for i := range list {
 		sum := 0.0
-
 		for j := range list[i] {
 			total += list[i][j].Amount
 			sum += list[i][j].Amount
@@ -177,18 +177,26 @@ func (c *Classifier) calcRankValue(list Credits) float64 {
 
 		data = append(data, sum)
 
+		v := 0.0
 		if len(list[i]) == 1 {
-			rankValue++
+			v = 1
 		}
 		if len(list[i]) > 1 {
-			rankValue -= float64(len(list[i])) - 1
+			v = -(float64(len(list[i])) - 1)
+		}
+		rankValue += v
+
+		if Debug {
+			fmt.Println(fmt.Sprintf("%v: %10v %5v [%v / %v]", i, sum, v, rankValue, i+1))
 		}
 	}
 
 	rankValue = rankValue / float64(len(list))
 
-	if c.Debug {
+	if Debug {
 		mean, sd, _ := c.getStatistics(data)
+
+		fmt.Println()
 		fmt.Println(fmt.Sprintf("Statistics: %.2f ± %.2f", mean, sd))
 	}
 

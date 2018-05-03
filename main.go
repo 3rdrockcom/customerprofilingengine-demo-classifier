@@ -23,6 +23,12 @@ func init() {
 }
 
 func main() {
+
+	if Debug {
+		classifier.Debug = Debug
+		probability.Debug = Debug
+	}
+
 	// Parse CSV file and extract transactions
 	csvFile := csv.NewCSV(Filename)
 	t, err := csvFile.Parse()
@@ -52,7 +58,6 @@ func main() {
 
 		// Probability
 		p := probability.New(transactions)
-		p.Debug = Debug
 		probDay := p.RunDay()
 		probWeekday := p.RunWeekday()
 
@@ -61,7 +66,6 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		cl.Debug = Debug
 		res := cl.Process()
 
 		c := res.GetClassification()

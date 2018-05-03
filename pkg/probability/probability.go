@@ -8,12 +8,16 @@ import (
 	"github.com/epointpayment/customerprofilingengine-demo-classifier/pkg/probability/weekday"
 )
 
+var Debug bool
+
 type Probability struct {
 	Transactions models.Transactions
-	Debug        bool
 }
 
 func New(t models.Transactions) *Probability {
+	day.Debug = Debug
+	weekday.Debug = Debug
+
 	sort.Sort(t)
 
 	return &Probability{
@@ -23,14 +27,10 @@ func New(t models.Transactions) *Probability {
 
 func (p *Probability) RunDay() day.Results {
 	d := day.NewDay(p.Transactions)
-	d.Debug = p.Debug
-
 	return d.Run()
 }
 
 func (p *Probability) RunWeekday() weekday.Results {
 	w := weekday.NewWeekday(p.Transactions)
-	w.Debug = p.Debug
-
 	return w.Run()
 }
